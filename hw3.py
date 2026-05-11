@@ -14,7 +14,7 @@ pic = Picamera2()
 config = pic.create_preview_configuration(main={"size": (1280, 720)})
 
 # 2. Fixed: Use Transform object instead of a string
-config["transform"] = Transform(rotate180=True) 
+config["transform"] = Transform(180) 
 
 pic.configure(config)
 
