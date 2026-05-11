@@ -1,38 +1,55 @@
 from gpiozero import Button, MotionSensor
-from picamera import PiCamera
-from time import sleep
+from picamera2 import Picamera2
 from signal import pause
+from time import sleep
+import os
 
-#create objects that refer to a button,
-#a motion sensor and the PiCamera
+# 1. Component Configuration
+# Button is connected to GPIO 2, PIR sensor to GPIO 4
 button = Button(2)
 pir = MotionSensor(4)
-camera = PiCamera()
 
-#start the camera
-camera.rotation = 180
-camera.start_preview()
+# 2. Picamera2 Initialization & Setup
+pic = Picamera2()
+config = pic.create_preview_configuration(main={"size": (1280, 720)})
 
-#image image names
+# Set rotation for v1.3 camera
+config["transform"] = "rotate180" 
+pic.configure(config)
+
+# 3. Start Camera Preview
+pic.start()
+print("Camera preview started.")
+
+# Variable for image indexing
 i = 0
 
-#stop the camera when the pushbutton is pressed
+# Stop the camera and exit the program when the button is pressed
 def stop_camera():
-    camera.stop_preview()
-    #exit the program
-    exit()
+    print("\nStopping camera and exiting...")
+    pic.stop()
+    os._exit(0) 
 
-#take photo when motion is detected
+# Take a photo when motion is detected
 def take_photo():
     global i
     i = i + 1
-    camera.capture('/home/pi/Desktop/image_%s.jpg' % i)
-    print('A photo has been taken')
+    
+    # Path settings - make sure 'iot-team5' matches your username
+    save_path = f'/home/iot-team5/Desktop/image_{i}.jpg'
+    
+    print(f'Motion Detected! Capturing: image_{i}.jpg')
+    pic.capture_file(save_path)
+    
+    print('Capture complete. Waiting for 10 seconds...')
     sleep(10)
 
-#assign a function that runs when the button is pressed
+# Connect Events
 button.when_pressed = stop_camera
-#assign a function that runs when motion is detected
 pir.when_motion = take_photo
 
-pause()
+try:
+    print("System is Ready. Press the button to exit.")
+    pause()
+except KeyboardInterrupt:
+    pic.stop()
